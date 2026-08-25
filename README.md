@@ -11,14 +11,14 @@ To make comparing techniques easy and unambiguous, this demo project maps **one 
 
 ## 📋 Table of Contents
 1. [Security Comparison Matrix](#-security-comparison-matrix)
-2. [Method 3 Deep-Dive: Signature-Bound AES-256 Native Vault](#-method-3-deep-dive-signature-bound-aes-256-native-vault)
+2. [Method 1: `envied` (Compile-Time XOR Obfuscation)](#-method-1-envied-compile-time-xor-obfuscation)
+3. [Method 2: `native_armor_vault` (C++ / JNI Native Library)](#-method-2-native_armor_vault-c--jni-native-library)
+4. [Method 3: Signature-Bound AES-256 Native Vault (Military Grade)](#-method-3-signature-bound-aes-256-native-vault-military-grade)
    - [The Problem with Methods 1 & 2](#1-the-fundamental-flaw-of-standard-obfuscation)
    - [The Breakthrough: Keystore Signature as the AES Key](#2-the-core-concept-why-this-is-tamper-proof)
    - [End-to-End Visual Architecture Flow](#3-end-to-end-architecture--workflow)
    - [Step-by-Step Code & Execution Walkthrough](#4-step-by-step-code-walkthrough)
    - [How It Defeats Attack Scenarios](#5-how-it-defeats-attacker-scenarios)
-3. [Method 1: `envied` Implementation](#-method-1-envied-compile-time-xor-obfuscation)
-4. [Method 2: `native_armor_vault` Implementation](#-method-2-native_armor_vault-c--jni-native-library)
 5. [Complete Build, Run & Verification Workflow](#-complete-build-run--verification-workflow)
 6. [Decompilation & Binary Verification](#-decompilation--binary-verification)
 
@@ -26,7 +26,7 @@ To make comparing techniques easy and unambiguous, this demo project maps **one 
 
 ## 📊 Security Comparison Matrix
 
-| Security Feature | Plain `.env` / Const | `envied` | `native_armor_vault` | Signature-Bound AES-256 |
+| Security Feature | Plain `.env` / Const | `envied` (Method 1) | `native_armor_vault` (Method 2) | Signature-Bound AES-256 (Method 3) |
 | :--- | :---: | :---: | :---: | :---: |
 | **Plaintext in APK strings** | ❌ Plain visible | ✅ Hidden | ✅ Hidden | ✅ Hidden |
 | **Protected against `jadx` / Dex decompiler** | ❌ Exposed | ✅ Protected | ✅ Protected | ✅ Protected |
@@ -37,7 +37,108 @@ To make comparing techniques easy and unambiguous, this demo project maps **one 
 
 ---
 
-## 🛡️ Method 3 Deep-Dive: Signature-Bound AES-256 Native Vault
+## 🛠️ Method 1: `envied` (Compile-Time XOR Obfuscation)
+
+### 1. How It Works
+- At compile time, `build_runner` reads the key from `.env`.
+- Instead of generating a plain string literal in Dart, it breaks the string into byte chunks and XORs them with randomized integer keys (`_enviedkey...`).
+- At runtime, when `EnviedVault.apiKey` is accessed, it executes a bitwise loop (`List.generate(...)`) in Dart memory to decode the bytes into the final string.
+
+### 2. Step-by-Step Implementation
+
+#### Step 1.1: Add Dependencies to `pubspec.yaml`
+```yaml
+dependencies:
+  flutter:
+    sdk: flutter
+  envied: ^1.1.1
+
+dev_dependencies:
+  build_runner: ^2.4.15
+  envied_generator: ^1.1.1
+```
+Run `flutter pub get`.
+
+#### Step 1.2: Add Secret to `.env`
+In the project root, create or edit `.env`:
+```env
+ENVIED_API_KEY=sk_envied_9876543210_secret_abc123
+```
+
+#### Step 1.3: Create Vault Class in `lib/envied_vault.dart`
+```dart
+import 'package:envied/envied.dart';
+
+part 'envied_vault.g.dart';
+
+@Envied(path: '.env', obfuscate: true)
+abstract class EnviedVault {
+  @EnviedField(varName: 'ENVIED_API_KEY')
+  static final String apiKey = _EnviedVault.apiKey;
+}
+```
+
+#### Step 1.4: Run Code Generation
+```bash
+dart run build_runner build --delete-conflicting-outputs
+```
+This generates `lib/envied_vault.g.dart`, transforming the secret into an array of obfuscated integer bytes and a runtime XOR decoding routine.
+
+#### Step 1.5: Access in Dart Code
+```dart
+import 'package:obfs_demo/envied_vault.dart';
+
+String key = EnviedVault.apiKey;
+```
+
+---
+
+## 🛠️ Method 2: `native_armor_vault` (C++ / JNI Native Library)
+
+### 1. How It Works
+- The CLI tool `native_armor_vault:build` compiles your secrets into C++ source files (`native_vault.cpp`) for Android and iOS.
+- The secrets are obfuscated inside C++ using rotating XOR keys and S-box lookup tables.
+- The C++ files are compiled by NDK/CMake into native shared libraries (`.so` on Android, Framework on iOS).
+- Flutter accesses the secret through `dart:ffi` / Platform Channels at runtime.
+
+### 2. Step-by-Step Implementation
+
+#### Step 2.1: Add Dependency to `pubspec.yaml`
+```yaml
+dependencies:
+  flutter:
+    sdk: flutter
+  native_armor_vault: ^0.0.1
+```
+Run `flutter pub get`.
+
+#### Step 2.2: Create Configuration File `native_vault.yaml`
+In the project root, create `native_vault.yaml`:
+```yaml
+xor_key: "demo_secure_seed_987654321"
+secrets:
+  ARMOR_API_KEY: "sk_armor_1234567890_secret_def456"
+```
+
+#### Step 2.3: Generate C++ Native Source Code
+```bash
+dart run native_armor_vault:build
+```
+This automatically creates:
+- `android/src/main/cpp/native_vault.cpp` (C++ XOR & S-Box decoding logic for Android)
+- `ios/Classes/native_vault.cpp` (C++ implementation for iOS)
+- `lib/armor_vault.g.dart` (Dart FFI / platform bridge)
+
+#### Step 2.4: Access in Dart Code
+```dart
+import 'package:obfs_demo/armor_vault.g.dart';
+
+String key = ArmorVault.armor_api_key;
+```
+
+---
+
+## 🛡️ Method 3: Signature-Bound AES-256 Native Vault (Military Grade)
 
 ### 1. The Fundamental Flaw of Standard Obfuscation
 In standard obfuscation (like `envied` or `native_armor_vault`), the unmasking routine and the seed/keys reside **inside the compiled app binary**.
@@ -108,17 +209,26 @@ sequenceDiagram
 
 ### 4. Step-by-Step Code Walkthrough
 
-#### Step A: Extract Your Signing Certificate SHA-256 Fingerprint
-Run `keytool` on your development debug keystore (or release keystore in CI/CD):
+#### Step 3.1: Add Dependencies to `pubspec.yaml`
+```yaml
+dependencies:
+  flutter:
+    sdk: flutter
+  cryptography: ^2.7.0
+  flutter_secure_storage: ^9.2.4
+  convert: ^3.1.2
+```
+Run `flutter pub get`.
+
+#### Step 3.2: Inspect Signing Certificate SHA-256 Fingerprint
+For Debug Keystore:
 ```bash
 keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android | grep -i "SHA256:"
 ```
-*Example Output:* `SHA256: 3F:A7:8B:12:...`
+*(Note: For release builds, point `-keystore` to your production upload keystore).*
 
----
-
-#### Step B: Encrypt Secrets Offline (`tool/encrypt_secrets.dart`)
-This tool runs on your computer before building the app. It reads the secret and derives the encryption key using 10,000 PBKDF2 iterations:
+#### Step 3.3: Pre-Build Offline Encryption Tool (`tool/encrypt_secrets.dart`)
+Create `tool/encrypt_secrets.dart` to encrypt raw secrets with AES-256-GCM using PBKDF2 (10,000 rounds) bound to the certificate fingerprint:
 
 ```dart
 // tool/encrypt_secrets.dart
@@ -156,9 +266,7 @@ Run command:
 dart run tool/encrypt_secrets.dart
 ```
 
----
-
-#### Step C: Native OS Certificate Extraction (`MainActivity.kt`)
+#### Step 3.4: Native OS Certificate Extraction (`MainActivity.kt`)
 On Android, the app requests the authentic signature directly from the Android PackageManager:
 
 ```kotlin
@@ -209,9 +317,7 @@ class MainActivity : FlutterActivity() {
 }
 ```
 
----
-
-#### Step D: Runtime Decryption & Hardware Sealing (`lib/signature_vault.dart`)
+#### Step 3.5: Runtime Decryption & Hardware Sealing (`lib/signature_vault.dart`)
 
 ```dart
 // lib/signature_vault.dart
@@ -229,7 +335,7 @@ class SignatureVault {
   static List<int> get _dynamicEntropy => 
       List<int>.generate(24, (i) => ((i * 37 + 109) ^ 0x5A) & 0xFF);
 
-  // Paste the Hex output generated in Step B:
+  // Paste the Hex output generated in Step 3.3:
   static const String _cipher = '30cf1f35189e39b780d31d6552a89fa52aff54ce92fd53f4cd3048bbfb65db9785596381';
   static const String _nonce = '37e315553c085a01130a64c8';
   static const String _mac = '9feb100ca013d7048c1e1469e69e9f5c';
@@ -270,6 +376,13 @@ class SignatureVault {
 }
 ```
 
+#### Step 3.6: Access in Dart Code
+```dart
+import 'package:obfs_demo/signature_vault.dart';
+
+String key = await SignatureVault.sigvault_api_key;
+```
+
 ---
 
 ### 5. How It Defeats Attacker Scenarios
@@ -282,86 +395,6 @@ class SignatureVault {
 
 ---
 
-## 🛠️ Method 1: `envied` (Compile-Time XOR Obfuscation)
-
-### Step 1.1: Add Dependencies to `pubspec.yaml`
-```yaml
-dependencies:
-  flutter:
-    sdk: flutter
-  envied: ^1.1.1
-
-dev_dependencies:
-  build_runner: ^2.4.15
-  envied_generator: ^1.1.1
-```
-Run `flutter pub get`.
-
-### Step 1.2: Add Secret to `.env`
-```env
-ENVIED_API_KEY=sk_envied_9876543210_secret_abc123
-```
-
-### Step 1.3: Create Vault Class in `lib/envied_vault.dart`
-```dart
-import 'package:envied/envied.dart';
-
-part 'envied_vault.g.dart';
-
-@Envied(path: '.env', obfuscate: true)
-abstract class EnviedVault {
-  @EnviedField(varName: 'ENVIED_API_KEY')
-  static final String apiKey = _EnviedVault.apiKey;
-}
-```
-
-### Step 1.4: Run Code Generation
-```bash
-dart run build_runner build --delete-conflicting-outputs
-```
-
-### Step 1.5: Access in Dart Code
-```dart
-import 'package:obfs_demo/envied_vault.dart';
-
-String key = EnviedVault.apiKey;
-```
-
----
-
-## 🛠️ Method 2: `native_armor_vault` (C++ / JNI Native Library)
-
-### Step 2.1: Add Dependency to `pubspec.yaml`
-```yaml
-dependencies:
-  flutter:
-    sdk: flutter
-  native_armor_vault: ^0.0.1
-```
-Run `flutter pub get`.
-
-### Step 2.2: Create Configuration File `native_vault.yaml`
-```yaml
-xor_key: "demo_secure_seed_987654321"
-secrets:
-  ARMOR_API_KEY: "sk_armor_1234567890_secret_def456"
-```
-
-### Step 2.3: Generate C++ Native Source Code
-```bash
-dart run native_armor_vault:build
-```
-Creates `android/src/main/cpp/native_vault.cpp`, `ios/Classes/native_vault.cpp`, and `lib/armor_vault.g.dart`.
-
-### Step 2.4: Access in Dart Code
-```dart
-import 'package:obfs_demo/armor_vault.g.dart';
-
-String key = ArmorVault.armor_api_key;
-```
-
----
-
 ## ⚡ Complete Build, Run & Verification Workflow
 
 Run these commands sequentially to build and test:
@@ -370,13 +403,13 @@ Run these commands sequentially to build and test:
 # 1. Install all dependencies
 flutter pub get
 
-# 2. Generate code for Envied
+# 2. Generate code for Envied (Method 1)
 dart run build_runner build --delete-conflicting-outputs
 
-# 3. Generate native C++ code for Native Armor
+# 3. Generate native C++ code for Native Armor (Method 2)
 dart run native_armor_vault:build
 
-# 4. Generate encrypted payload for Signature Vault
+# 4. Generate encrypted payload for Signature Vault (Method 3)
 dart run tool/encrypt_secrets.dart
 
 # 5. Run the Flutter App
