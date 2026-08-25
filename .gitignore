@@ -4,9 +4,8 @@
 *.pyc
 *.swp
 .DS_Store
-.env
-.env.*
-native_vault.yaml
+# .env and native_vault.yaml are included intentionally for this demo repository
+
 .atom/
 .build/
 .buildlog/

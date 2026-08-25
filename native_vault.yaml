@@ -1,0 +1,3 @@
+xor_key: "demo_secure_seed_987654321"
+secrets:
+  ARMOR_API_KEY: "sk_armor_1234567890_secret_def456"
