@@ -1,0 +1,3 @@
+# Configuration for native_armor_vault
+keys:
+  native_armor_api_key: "sample_native_armor_secret_key"
