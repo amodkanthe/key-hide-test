@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy — Obfs Demo Key Vault</title>
+  <style>
+    :root {
+      --bg: #090d16;
+      --card-bg: #111827;
+      --border: #1f2937;
+      --text: #e5e7eb;
+      --text-muted: #9ca3af;
+      --heading: #f9fafb;
+      --primary: #38bdf8;
+      --accent: #818cf8;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+      padding: 40px 20px;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 48px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+    }
+    .badge {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--primary);
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: 9999px;
+      padding: 4px 12px;
+      margin-bottom: 16px;
+    }
+    h1 {
+      font-size: 32px;
+      color: var(--heading);
+      margin-bottom: 8px;
+    }
+    .meta {
+      color: var(--text-muted);
+      font-size: 14px;
+      margin-bottom: 32px;
+    }
+    h2 {
+      font-size: 20px;
+      color: var(--primary);
+      margin-top: 32px;
+      margin-bottom: 12px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+    }
+    p {
+      margin-bottom: 16px;
+      color: var(--text);
+    }
+    ul {
+      margin-left: 24px;
+      margin-bottom: 16px;
+      color: var(--text);
+    }
+    li {
+      margin-bottom: 8px;
+    }
+    .highlight-box {
+      background: rgba(56, 189, 248, 0.06);
+      border-left: 4px solid var(--primary);
+      padding: 16px 20px;
+      border-radius: 0 8px 8px 0;
+      margin: 24px 0;
+    }
+    .highlight-box strong {
+      color: var(--heading);
+    }
+    footer {
+      margin-top: 48px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+      font-size: 13px;
+      color: var(--text-muted);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="badge">Official Policy</div>
+    <h1>Privacy Policy</h1>
+    <div class="meta">
+      <strong>Application:</strong> Obfs Demo — Key Vault &bull; 
+      <strong>Effective Date:</strong> October 9, 2026
+    </div>
+
+    <div class="highlight-box">
+      <strong>Summary:</strong> Obfs Demo is a security demonstration and technical validation utility. <strong>We do not collect, transmit, store, or sell any personal data, device identifiers, or user information.</strong> All cryptographic operations and signature inspections occur 100% offline and locally on your device.
+    </div>
+
+    <h2>1. Information Collection and Storage</h2>
+    <p>
+      The Application does not collect any personal information, device identifiers, or analytics:
+    </p>
+    <ul>
+      <li><strong>No Personal Data:</strong> We do not ask for, collect, or store your name, email, phone number, location, or credentials.</li>
+      <li><strong>No Tracking or Analytics:</strong> We do not integrate third-party analytics SDKs (e.g., Firebase Analytics, Adjust, Facebook SDK, or Mixpanel).</li>
+      <li><strong>No Advertising Networks:</strong> The Application is completely ad-free and contains no advertising tracking code.</li>
+      <li><strong>No Network Data Transmission:</strong> The core signature validation and cryptographic decryption workflows operate strictly on-device without contacting remote tracking endpoints.</li>
+    </ul>
+
+    <h2>2. On-Device Cryptographic Operations</h2>
+    <p>
+      The Application inspects the local Android package signing certificate (SHA-256 fingerprint) solely to demonstrate signature-bound encryption algorithms (AES-256-GCM / PBKDF2). This diagnostic information:
+    </p>
+    <ul>
+      <li>Is read locally via the Android <code>PackageManager</code> API.</li>
+      <li>Is rendered on your screen solely for verification and educational purposes.</li>
+      <li>Is never transmitted off your device.</li>
+    </ul>
+
+    <h2>3. Device Permissions</h2>
+    <p>
+      The Application requires zero invasive permissions:
+    </p>
+    <ul>
+      <li>No camera access</li>
+      <li>No microphone access</li>
+      <li>No contacts or calendar access</li>
+      <li>No GPS or precise location tracking</li>
+    </ul>
+
+    <h2>4. Children’s Privacy</h2>
+    <p>
+      Our Application does not address anyone under the age of 13. We do not knowingly collect personally identifiable information from children under 13. Since we do not collect any user data, our Application fully complies with the Children's Online Privacy Protection Act (COPPA) and Google Play Families Policy.
+    </p>
+
+    <h2>5. Security of Your Information</h2>
+    <p>
+      Because no data is ever transmitted or stored outside of transient device memory, there are no remote servers or databases vulnerable to compromise or unauthorized access.
+    </p>
+
+    <h2>6. Changes to This Privacy Policy</h2>
+    <p>
+      We may update our Privacy Policy from time to time. You are advised to review this page periodically for any changes. Any updates are effective immediately upon posting.
+    </p>
+
+    <h2>7. Contact Us</h2>
+    <p>
+      If you have questions, feedback, or concerns regarding this Privacy Policy or the security architecture of this application, please contact:
+    </p>
+    <p>
+      <strong>Developer Contact:</strong> <a href="mailto:dev@example.com" style="color: var(--primary);">dev@example.com</a>
+    </p>
+
+    <footer>
+      &copy; 2026 Obfs Demo Team. All rights reserved. Built for Google Play Compliance.
+    </footer>
+  </div>
+</body>
+</html>

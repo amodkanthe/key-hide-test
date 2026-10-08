@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'envied_vault.dart';
 import 'armor_vault.g.dart';
 import 'signature_vault.dart';
@@ -41,7 +42,11 @@ class _VaultDashboardPageState extends State<VaultDashboardPage> {
   String _enviedKey = 'Loading...';
   String _armorKey = 'Loading...';
   String _sigVaultKey = 'Loading...';
+  String _activeSha = 'Querying...';
+  String _diagnostics = 'Querying...';
   bool _isLoading = true;
+
+  static const _channel = MethodChannel('com.example.security/signature');
 
   @override
   void initState() {
@@ -51,6 +56,17 @@ class _VaultDashboardPageState extends State<VaultDashboardPage> {
 
   Future<void> _loadAllSecrets() async {
     setState(() => _isLoading = true);
+
+    // 0. Query active signing certificate SHA from OS — for Play Store SHA verification
+    String activeSha = 'N/A (not on Android)';
+    String diagnostics = 'N/A (not on Android)';
+    try {
+      activeSha = await _channel.invokeMethod<String>('getCertFingerprint') ?? 'null returned';
+      diagnostics = await _channel.invokeMethod<String>('getDiagnostics') ?? 'null returned';
+    } catch (e) {
+      activeSha = 'Error: $e';
+      diagnostics = 'Error: $e';
+    }
 
     // 1. Envied (XOR Obfuscation in Dart class)
     String enviedResult;
@@ -78,6 +94,8 @@ class _VaultDashboardPageState extends State<VaultDashboardPage> {
 
     if (mounted) {
       setState(() {
+        _activeSha = activeSha;
+        _diagnostics = diagnostics;
         _enviedKey = enviedResult;
         _armorKey = armorResult;
         _sigVaultKey = sigVaultResult;
@@ -116,6 +134,8 @@ class _VaultDashboardPageState extends State<VaultDashboardPage> {
                   children: [
                     _buildHeroBanner(),
                     const SizedBox(height: 16),
+                    _buildShaDiagnosticCard(),
+                    const SizedBox(height: 16),
                     _buildSecretCard(
                       title: '1. Envied: ENVIED_API_KEY',
                       badgeText: 'XOR Modifier Array',
@@ -150,6 +170,111 @@ class _VaultDashboardPageState extends State<VaultDashboardPage> {
                 ),
               ),
             ),
+    );
+  }
+
+  Widget _buildShaDiagnosticCard() {
+    final isPlayStore = !_activeSha.startsWith('f0143cea') &&
+        !_activeSha.startsWith('Error') &&
+        !_activeSha.startsWith('N/A') &&
+        !_activeSha.startsWith('Query');
+    final statusColor = _activeSha.startsWith('Error') || _activeSha.startsWith('N/A')
+        ? Colors.grey
+        : isPlayStore
+            ? const Color(0xFF10B981)  // green = Play Store key
+            : Colors.amber;            // amber = debug key
+    final statusLabel = _activeSha.startsWith('Error') || _activeSha.startsWith('N/A')
+        ? 'Not on Android'
+        : isPlayStore
+            ? '✅ Play App Signing Key'
+            : '🔶 Debug Key';
+
+    return Card(
+      color: const Color(0xFF0F2035),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: statusColor, width: 1.5),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.fingerprint, color: statusColor, size: 22),
+                const SizedBox(width: 10),
+                const Expanded(
+                  child: Text(
+                    'Active Signing Certificate (Runtime)',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: statusColor.withAlpha(40),
+                    border: Border.all(color: statusColor),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    statusLabel,
+                    style: TextStyle(color: statusColor, fontSize: 11, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'SHA-256 reported by Android PackageManager at runtime:',
+              style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+            ),
+            const SizedBox(height: 6),
+            Container(
+              padding: const EdgeInsets.all(10),
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: const Color(0xFF0B1120),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFF334155)),
+              ),
+              child: SelectableText(
+                _activeSha,
+                style: TextStyle(
+                  fontFamily: 'monospace',
+                  fontSize: 11,
+                  color: statusColor,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              'Full Diagnostics (paste RELEASE_CERT_SHA256 from line below into .env):',
+              style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+            ),
+            const SizedBox(height: 6),
+            Container(
+              padding: const EdgeInsets.all(10),
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: const Color(0xFF0B1120),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFF334155)),
+              ),
+              child: SelectableText(
+                _diagnostics,
+                style: const TextStyle(
+                  fontFamily: 'monospace',
+                  fontSize: 10,
+                  color: Color(0xFF94A3B8),
+                  height: 1.5,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
